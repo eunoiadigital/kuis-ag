@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kuis Alkitab Arrow -G - Level 3 (FINAL)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 500px; margin: auto; background: #f0f2f5; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 20px; }
+        h2, h3 { text-align: center; color: #2c3e50; }
+        .text-center { text-align: center; }
+        input, select, .btn { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+        .btn { background: #e74c3c; color: white; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        .btn:hover { background: #c0392b; }
+        .btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .option-btn { background: #ffffff; color: #333; border: 2px solid #e0e0e0; text-align: left; margin: 8px 0; padding-left: 15px; font-weight: 500; }
+        .option-btn:hover:not(:disabled) { background: #f8f9fa; border-color: #e74c3c; }
+        .correct { background: #2ecc71 !important; color: white !important; border-color: #27ae60 !important; }
+        .wrong { background: #e74c3c !important; color: white !important; border-color: #c0392b !important; }
+        #timer { font-size: 22px; font-weight: bold; text-align: center; margin: 10px 0; color: #2c3e50; transition: color 0.3s; }
+        #feedback { font-weight: bold; text-align: center; margin: 15px 0; font-size: 16px; min-height: 24px; line-height: 1.4; }
+        #ready-screen, #quiz, #results, #next-btn { display: none; }
+        .progress { text-align: center; font-size: 14px; color: #7f8c8d; margin-bottom: 10px; font-weight: bold; }
+        .loading { text-align: center; color: #7f8c8d; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- 1. Form Pendaftaran -->
+        <div id="register">
+            <h2>Kuis Alkitab Arrow-G - Level 3 (FINAL)</h2>
+            <p style="text-align: center; color: #e74c3c; font-weight: bold;">⚠️ Peringatan: Waktu hanya 10 detik per soal!</p>
+            <label for="name">Nama Lengkap:</label>
+            <input type="text" id="name" placeholder="Masukkan nama Anda...">
+            <label for="gender">Jenis Kelamin:</label>
+            <select id="gender">
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+            </select>
+            <button class="btn" style="background: #3498db;" onclick="goToReadyScreen()">Mulai Kuis</button>
+        </div>
+
+        <!-- 2. Halaman Konfirmasi Kesiapan -->
+        <div id="ready-screen" class="text-center">
+            <h2>Konfirmasi Babak Final</h2>
+            <p style="font-size: 18px; margin: 20px 0; color: #555;">Anda sudah siap menjawab?</p>
+            <button class="btn" style="background: #2ecc71;" onclick="beginQuiz()">Ya, siap</button>
+        </div>
+
+        <!-- 3. Tampilan Kuis & Pertanyaan -->
+        <div id="quiz">
+            <div class="progress" id="progress">Pertanyaan 1 dari 15</div>
+            <div id="timer">Sisa Waktu: 10 detik</div>
+            <h3 id="question"></h3>
+            <div id="options"></div>
+            <div id="feedback"></div>
+            <button id="next-btn" class="btn" style="background: #2c3e50;" onclick="nextQuestion()">Pertanyaan Selanjutnya</button>
+        </div>
+
+        <!-- 4. Tampilan Hasil -->
+        <div id="results">
+            <h2>Kuis Selesai!</h2>
+            <p style="text-align: center; font-size: 18px; line-height: 1.6;" id="finalScore"></p>
+            <p class="loading" id="loading-text">Menyimpan nilai ke data admin, mohon tunggu...</p>
+            <button id="done-btn" class="btn" style="background: #3498db; display:none;" onclick="location.reload()">Selesai & Keluar</button>
+        </div>
+    </div>
+
+    <script>
+        // 15 Pertanyaan Pilihan Ganda - LEVEL 3 (Tingkat Sulit / Final)
+        const questions = [
+            { q: "Siapakah satu-satunya hakim perempuan yang dicatat dalam Kitab Hakim-hakim?", a: ["Priskila", "Debora", "Yael", "Atalya"], correct: 1 },
+            { q: "Di kota manakah murid-murid Yesus untuk pertama kalinya disebut sebagai 'Kristen'?", a: ["Yerusalem", "Efesus", "Antiokhia", "Roma"], correct: 2 },
+            { q: "Berapakah umur Metusalah, manusia tertua yang dicatat dalam Alkitab, sebelum ia mati?", a: ["969 Tahun", "950 Tahun", "895 Tahun", "777 Tahun"], correct: 0 },
+            { q: "Siapakah raja Yehuda yang mengalami kesembuhan dan umurnya diperpanjang Tuhan selama 15 tahun?", a: ["Raja Yosia", "Raja Hizkia", "Raja Manasye", "Raja Uzia"], correct: 1 },
+            { q: "Kitab manakah dalam Perjanjian Lama yang sama sekali tidak menyebutkan kata 'Allah' atau 'Tuhan'?", a: ["Kidung Agung", "Ester", "Pengkhotbah", "Ratapan"], correct: 1 },
+            { q: "Siapakah nama ayah dari Yohanes Pembaptis yang sempat menjadi bisu karena tidak percaya pesan malaikat?", a: ["Zakharia", "Elia", "Imam Eli", "Abiatar"], correct: 0 },
+            { q: "Berapa kali Rasul Paulus dicatat mengalami karam kapal dalam perjalanan pelayanannya menurut 2 Korintus 11?", a: ["1 kali", "2 kali", "3 kali", "4 kali"], correct: 2 },
+            { q: "Apakah arti dari nama tempat 'Golgota', tempat di mana Tuhan Yesus disalibkan?", a: ["Tempat Tengkorak", "Tempat Ratapan", "Bukit Zaitun", "Kebun Anggur"], correct: 0 },
+            { q: "Siapakah nabi yang diutus Tuhan untuk menegur dan membongkar dosa Raja Daud dengan Batsyeba?", a: ["Nabi Yesaya", "Nabi Natan", "Nabi Samuel", "Nabi Yeremia"], correct: 1 },
+            { q: "Siapakah nama menantu dari Naomi selain Rut yang memilih untuk kembali ke bangsa dan berhalanya?", a: ["Orpa", "Mikhall", "Milka", "Pena"], correct: 0 },
+            { q: "Bahasa asli apakah yang dominan digunakan dalam penulisan manuskrip asli Perjanjian Baru?", a: ["Ibrani", "Aramaic", "Latin", "Yunani Kuno (Koine)"], correct: 3 },
+            { q: "Berapakah jumlah total jiwa manusia yang selamat di dalam bahtera Nuh saat air bah melanda bumi?", a: ["4 orang", "6 orang", "8 orang", "12 orang"], correct: 2 },
+            { q: "Siapakah nama Imam Besar yang memimpin sidang Mahkamah Agama untuk mengadili Yesus sebelum diserahkan ke Pilatus?", a: ["Anas", "Kayafas", "Gamaliel", "Kornelius"], correct: 1 },
+            { q: "Siapakah nama rasul pengganti Yudas Iskariot yang dipilih oleh para murid melalui buang undi?", a: ["Matias", "Barnabas", "Silas", "Timotius"], correct: 0 },
+            { q: "Siapakah nama raja Babel yang menjadi gila dan makan rumput seperti lembu selama 7 masa?", a: ["Raja Belsyazar", "Raja Nebukadnezar", "Raja Koresh", "Raja Darius"], correct: 1 }
+        ];
+
+        let currentQ = 0, correctCount = 0, wrongCount = 0;
+        let userData = {};
+        let timerInterval;
+        let timeLeft = 10; // DIUBAH: Batasan waktu menjadi 10 Detik
+
+        function goToReadyScreen() {
+            userData.name = document.getElementById('name').value.trim();
+            userData.gender = document.getElementById('gender').value;
+            if(!userData.name) return alert("Silakan isi nama Anda terlebih dahulu!");
+            
+            document.getElementById('register').style.display = 'none';
+            document.getElementById('ready-screen').style.display = 'block';
+        }
+
+        function beginQuiz() {
+            document.getElementById('ready-screen').style.display = 'none';
+            document.getElementById('quiz').style.display = 'block';
+            showQuestion();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 10; // Reset ke 10 detik
+            const timerDiv = document.getElementById('timer');
+            timerDiv.innerText = `Sisa Waktu: ${timeLeft} detik`;
+            timerDiv.style.color = '#2c3e50';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDiv.innerText = `Sisa Waktu: ${timeLeft} detik`;
+
+                if (timeLeft <= 3) {
+                    timerDiv.style.color = '#e74c3c'; // Merah jika waktu sisa 3 detik
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function showQuestion() {
+            const q = questions[currentQ];
+            document.getElementById('progress').innerText = `Pertanyaan ${currentQ + 1} dari ${questions.length}`;
+            document.getElementById('question').innerText = q.q;
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('next-btn').style.display = 'none';
+
+            const optDiv = document.getElementById('options');
+            optDiv.innerHTML = '';
+
+            q.a.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(i, btn);
+                optDiv.appendChild(btn);
+            });
+
+            startTimer();
+        }
+
+        function checkAnswer(selectedIdx, clickedBtn) {
+            clearInterval(timerInterval);
+            const q = questions[currentQ];
+            const allButtons = document.querySelectorAll('.option-btn');
+            
+            allButtons.forEach(btn => btn.disabled = true);
+
+            if (selectedIdx === q.correct) {
+                correctCount++;
+                clickedBtn.classList.add('correct');
+                document.getElementById('feedback').innerText = "Luar Biasa! Jawaban Anda Benar.";
+                document.getElementById('feedback').style.color = '#2ecc71';
+            } else {
+                wrongCount++;
+                clickedBtn.classList.add('wrong');
+                
+                const correctAnswerText = q.a[q.correct];
+                document.getElementById('feedback').innerText = `Salah. Jawaban yang benar adalah: ${correctAnswerText}`;
+                document.getElementById('feedback').style.color = '#e74c3c';
+                
+                allButtons[q.correct].classList.add('correct');
+            }
+
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        function handleTimeout() {
+            wrongCount++;
+            const q = questions[currentQ];
+            const allButtons = document.querySelectorAll('.option-btn');
+            
+            allButtons.forEach(btn => btn.disabled = true);
+
+            const correctAnswerText = q.a[q.correct];
+            document.getElementById('feedback').innerText = `Waktu habis! Jawaban yang benar adalah: ${correctAnswerText}`;
+            document.getElementById('feedback').style.color = '#e74c3c';
+            
+            allButtons[q.correct].classList.add('correct');
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQ++;
+            if(currentQ < questions.length) {
+                showQuestion();
+            } else {
+                submitResult();
+            }
+        }
+
+        function submitResult() {
+            clearInterval(timerInterval);
+            document.getElementById('quiz').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+            
+            // Skor dihitung proporsional terhadap total 15 soal (Benar/15 * 100)
+            const finalScore = Math.round((correctCount / questions.length) * 100);
+            document.getElementById('finalScore').innerHTML = `<b>Hasil Akhir Babak Final:</b><br>Benar: ${correctCount}<br>Salah: ${wrongCount}<br>Total Skor: ${finalScore}`;
+            
+<script>
+function kirimSkorKeGoogle(namaPeserta, skorPeserta) {
+  // GANTI dengan URL Web App yang kamu salin di Langkah 2
+  const urlSinyalGoogle = "https://script.google.com/macros/s/XXXXX/exec"; 
+
+  const dataKuis = {
+    nama: namaPeserta,
+    skor: skorPeserta
+  };
+
+  // Mengirim data ke Google Sheet secara diam-diam lewat latar belakang
+  fetch(urlSinyalGoogle, {
+    method: "POST",
+    mode: "no-cors", // Penting agar tidak terkena error keamanan CORS pembatasan browser
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(dataKuis)
+  })
+  .then(() => {
+    alert("Skor kamu berhasil dikirim!");
+  })
+  .catch((error) => {
+    console.error("Gagal mengirim:", error);
+    alert("Terjadi kesalahan saat mengirim skor.");
+  });
+}
+</script>
+                .withSuccessHandler(() => {
+                    document.getElementById('loading-text').innerText = "Data babak final berhasil disimpan ke Admin!";
+                    document.getElementById('done-btn').style.display = 'block';
+                })
+                .withFailureHandler((err) => {
+                    document.getElementById('loading-text').innerText = "Gagal mengirim data otomatis. Laporkan ke panitia.";
+                    console.error(err);
+                })
+                .saveData({
+                    name: userData.name,
+                    gender: userData.gender,
+                    correct: correctCount,
+                    wrong: wrongCount,
+                    score: finalScore
+                });
+        }
+    </script>
+</body>
+</html>
