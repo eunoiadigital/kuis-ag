@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kuis Cerdas Cermat Alkitab Arrow-G</title>
+    <title>Kuis Cerdas Cermat Alkitab</title>
     <style>
         body { font-family: sans-serif; background-color: #f0f2f5; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin:0; }
         .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; box-sizing: border-box; }
@@ -14,9 +14,13 @@
         button { width: 100%; padding: 12px; background-color: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
         .timer { font-size: 20px; font-weight: bold; color: #d93025; text-align: center; margin-bottom: 15px; padding: 5px; border: 2px solid #d93025; border-radius: 6px; background-color: #fce8e6; }
-        .opsi-btn { width: 100%; padding: 12px; background-color: #f8f9fa; color: #333; border: 1px solid #dadce0; text-align: left; margin-bottom: 10px; border-radius: 6px; font-size: 16px; cursor: pointer; }
-        .opsi-btn.terpilih { background-color: #e8f0fe; border-color: #1a73e8; color: #1a73e8; font-weight: bold; }
+        .opsi-btn { width: 100%; padding: 12px; background-color: #f8f9fa; color: #333; border: 1px solid #dadce0; text-align: left; margin-bottom: 10px; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.2s; }
+        
+        /* WARNA STATUS JAWABAN */
+        .opsi-btn.benar { background-color: #2db757 !important; border-color: #259647 !important; color: white !important; font-weight: bold; }
+        .opsi-btn.salah { background-color: #e53935 !important; border-color: #b71c1c !important; color: white !important; }
         .opsi-btn.salah-waktu { background-color: #fce8e6; border-color: #d93025; color: #d93025; }
+        
         .progress { text-align: center; font-size: 14px; color: #666; margin-bottom: 10px; }
     </style>
 </head>
@@ -38,7 +42,6 @@
                 <option value="Perempuan">Perempuan</option>
             </select>
         </div>
-        <!-- Di sini sudah diganti menjadi goToReadyScreen() agar cocok dengan eror tadi -->
         <button onclick="goToReadyScreen()">Mulai Kuis</button>
     </div>
 
@@ -48,7 +51,7 @@
         <div class="timer">Sisa Waktu: <span id="detik">15</span> detik</div>
         <h3 id="teks-soal">Pertanyaan...</h3>
         <div id="box-opsi"></div>
-        <button id="next-btn" onclick="soalBerikutnya()" style="margin-top: 15px;" disabled>Jawab Dulu untuk Lanjut</button>
+        <button id="next-btn" onclick="soalBerikutnya()" style="margin-top: 15px;" disabled>Pilih Jawaban Dulu</button>
     </div>
 
     <!-- HALAMAN SKOR -->
@@ -63,7 +66,7 @@
 </div>
 
 <script>
-    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT VERSI TERBARU KAMU DI SINI
+    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT KAMU DI SINI
     const urlGoogleAppScript = "https://script.google.com/macros/s/AKfycbxtaZhIlRwq0UGCKd0K0wqw_3g6IS7-kuulpr7K7L9TeSaay1c1lu6G7p_X5i_oPwR0/exec"; 
 
     const daftarSoal = [
@@ -85,42 +88,35 @@
     let skorSalah = 0;
     let sisaWaktu = 15;
     let hitunganMundur;
-    let jawabanTerpilih = null;
-    let waktuHabisStatus = false;
+    let sudahMenjawab = false;
 
-    // Fungsi goToReadyScreen yang tadi eror hilang sekarang sudah dibuat di sini
     function goToReadyScreen() {
-        try {
-            const namaInput = document.getElementById('input-nama').value.trim();
-            const genderInput = document.getElementById('input-gender').value;
+        const namaInput = document.getElementById('input-nama').value.trim();
+        const genderInput = document.getElementById('input-gender').value;
 
-            if (namaInput === "" || genderInput === "") {
-                alert("Harap isi Nama Lengkap dan Jenis Kelamin terlebih dahulu!");
-                return;
-            }
-
-            dataPeserta.nama = namaInput;
-            dataPeserta.gender = genderInput;
-
-            document.getElementById('halaman-depan').style.display = 'none';
-            document.getElementById('halaman-kuis').style.display = 'block';
-
-            tampilkanSoal();
-        } catch (err) {
-            alert("Terjadi eror: " + err.message);
+        if (namaInput === "" || genderInput === "") {
+            alert("Harap isi Nama Lengkap dan Jenis Kelamin terlebih dahulu!");
+            return;
         }
+
+        dataPeserta.nama = namaInput;
+        dataPeserta.gender = genderInput;
+
+        document.getElementById('halaman-depan').style.display = 'none';
+        document.getElementById('halaman-kuis').style.display = 'block';
+
+        tampilkanSoal();
     }
 
     function tampilkanSoal() {
         clearInterval(hitunganMundur);
-        jawabanTerpilih = null;
-        waktuHabisStatus = false;
+        sudahMenjawab = false;
         sisaWaktu = 15;
         
         document.getElementById('detik').innerText = sisaWaktu;
         document.getElementById('no-soal').innerText = indeksSoalSekarang + 1;
         document.getElementById('next-btn').disabled = true;
-        document.getElementById('next-btn').innerText = "Jawab Dulu untuk Lanjut";
+        document.getElementById('next-btn').innerText = "Pilih Jawaban Dulu";
 
         let soalSekarang = daftarSoal[indeksSoalSekarang];
         document.getElementById('teks-soal').innerText = soalSekarang.pertanyaan;
@@ -132,7 +128,7 @@
             let btn = document.createElement('button');
             btn.className = "opsi-btn";
             btn.innerText = opsi;
-            btn.onclick = function() { pilihJawaban(btn, opsi); };
+            btn.onclick = function() { cekJawaban(btn, opsi); };
             boxOpsi.appendChild(btn);
         });
 
@@ -147,26 +143,59 @@
         }, 1000);
     }
 
-    function pilihJawaban(tombolTerpilih, teksOpsi) {
-        if (waktuHabisStatus) return;
-        jawabanTerpilih = teksOpsi;
-        let semuaTombol = document.querySelectorAll('.opsi-btn');
-        semuaTombol.forEach(btn => btn.classList.remove('terpilih'));
-        tombolTerpilih.classList.add('terpilih');
+    function cekJawaban(tombolTerpilih, teksOpsi) {
+        // Jika waktu habis atau sudah pernah klik, kunci fungsi klik
+        if (sudahMenjawab || sisaWaktu <= 0) return; 
+        
+        clearInterval(hitunganMundur); // Stop waktu jika peserta klik jawaban
+        sudahMenjawab = true;
 
+        let jawabanBenarAsli = daftarSoal[indeksSoalSekarang].jawabanBenar;
+        let semuaTombol = document.querySelectorAll('.opsi-btn');
+
+        // Kunci semua tombol agar tidak bisa diklik lagi
+        semuaTombol.forEach(btn => btn.disabled = true);
+
+        if (teksOpsi === jawabanBenarAsli) {
+            // Jika Benar -> Hijau
+            tombolTerpilih.classList.add('benar');
+            skorBenar++;
+        } else {
+            // Jika Salah -> Merah pada yang dipilih
+            tombolTerpilih.classList.add('salah');
+            skorSalah++;
+
+            // Cari tombol yang isinya jawaban benar, lalu beri warna Hijau sebagai petunjuk
+            semuaTombol.forEach(btn => {
+                if (btn.innerText === jawabanBenarAsli) {
+                    btn.classList.add('benar');
+                }
+            });
+        }
+
+        // Aktifkan tombol untuk lanjut
         let tombolNext = document.getElementById('next-btn');
         tombolNext.disabled = false;
         tombolNext.innerText = "Lanjutkan";
     }
 
     function pemicuWaktuHabis() {
-        waktuHabisStatus = true;
+        sudahMenjawab = true;
         skorSalah++;
+        
+        let jawabanBenarAsli = daftarSoal[indeksSoalSekarang].jawabanBenar;
         let semuaTombol = document.querySelectorAll('.opsi-btn');
+
         semuaTombol.forEach(btn => {
             btn.disabled = true;
-            btn.classList.add('salah-waktu');
+            // Warnai hijau pada jawaban yang benar agar peserta tahu kunci jawabannya
+            if (btn.innerText === jawabanBenarAsli) {
+                btn.classList.add('benar');
+            } else {
+                btn.classList.add('salah-waktu');
+            }
         });
+
         document.getElementById('detik').innerText = "HABIS!";
         let tombolNext = document.getElementById('next-btn');
         tombolNext.disabled = false;
@@ -174,15 +203,6 @@
     }
 
     function soalBerikutnya() {
-        if (!waktuHabisStatus) {
-            let jawabanBenarAsli = daftarSoal[indeksSoalSekarang].jawabanBenar;
-            if (jawabanTerpilih === jawabanBenarAsli) {
-                skorBenar++;
-            } else {
-                skorSalah++;
-            }
-        }
-
         indeksSoalSekarang++;
         if (indeksSoalSekarang < daftarSoal.length) {
             tampilkanSoal();
